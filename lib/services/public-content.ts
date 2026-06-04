@@ -1,3 +1,4 @@
+import type { Model } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { BlogPost } from "@/lib/models/BlogPost";
 import { ContactLead } from "@/lib/models/ContactLead";
@@ -20,6 +21,14 @@ import {
   listDocuments,
 } from "@/lib/services/admin-crud";
 import { buildPaginationMeta, parsePagination } from "@/lib/utils/pagination";
+import type {
+  HomePageData,
+  PublicFAQ,
+  PublicProject,
+  PublicService,
+  PublicTeamMember,
+  PublicTestimonial,
+} from "@/lib/api/types";
 
 function stripDoc<T extends { _id: unknown }>(doc: T) {
   const { _id, __v, ...rest } = doc as T & { __v?: unknown };
@@ -66,7 +75,37 @@ export async function getPageSeo(pageKey: SeoPageKey) {
   });
 }
 
-export async function getHomepageData() {
+const HOME_FEATURED_LIMIT = 4;
+
+/** Featured first, then other active items — so the homepage always reflects CMS data. */
+async function listFeaturedForHome(
+  model: Model<unknown>,
+  limit: number,
+): Promise<Array<{ _id: unknown } & Record<string, unknown>>> {
+  const featured = await model
+    .find({ isActive: true, isFeatured: true })
+    .sort(contentSort)
+    .limit(limit)
+    .select("-__v")
+    .lean();
+
+  if (featured.length >= limit) return featured;
+
+  const featuredIds = featured.map((doc) => doc._id);
+  const more = await model
+    .find({
+      isActive: true,
+      ...(featuredIds.length ? { _id: { $nin: featuredIds } } : {}),
+    })
+    .sort(contentSort)
+    .limit(limit - featured.length)
+    .select("-__v")
+    .lean();
+
+  return [...featured, ...more];
+}
+
+export async function getHomepageData(): Promise<HomePageData> {
   await connectDB();
   const settings = await getPublicSettingsMap();
 
@@ -77,16 +116,8 @@ export async function getHomepageData() {
     teamPreview,
     faqPreview,
   ] = await Promise.all([
-    Service.find({ isActive: true, isFeatured: true })
-      .sort(contentSort)
-      .limit(6)
-      .select("-__v")
-      .lean(),
-    Project.find({ isActive: true, isFeatured: true })
-      .sort(contentSort)
-      .limit(6)
-      .select("-__v")
-      .lean(),
+    listFeaturedForHome(Service, HOME_FEATURED_LIMIT),
+    listFeaturedForHome(Project, HOME_FEATURED_LIMIT),
     Testimonial.find({ isActive: true, isFeatured: true })
       .sort(contentSort)
       .limit(6)
@@ -110,11 +141,13 @@ export async function getHomepageData() {
 
   return {
     hero,
-    featuredServices: featuredServices.map(stripDoc),
-    featuredProjects: featuredProjects.map(stripDoc),
-    featuredTestimonials: featuredTestimonials.map(stripDoc),
-    teamPreview: teamPreview.map(stripDoc),
-    faqPreview: faqPreview.map(stripDoc),
+    featuredServices: featuredServices.map(stripDoc) as unknown as PublicService[],
+    featuredProjects: featuredProjects.map(stripDoc) as unknown as PublicProject[],
+    featuredTestimonials: featuredTestimonials.map(
+      stripDoc,
+    ) as PublicTestimonial[],
+    teamPreview: teamPreview.map(stripDoc) as PublicTeamMember[],
+    faqPreview: faqPreview.map(stripDoc) as PublicFAQ[],
     robotGuideSettings,
     seo: await getPageSeo("home"),
     stats,

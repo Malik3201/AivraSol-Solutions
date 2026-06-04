@@ -14,6 +14,8 @@ export function FeaturedServicesSection({
 }: {
   services: PublicService[];
 }) {
+  if (!services.length) return null;
+
   return (
     <AivaWaypoint id="services">
       <HomeSection

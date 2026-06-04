@@ -1,39 +1,33 @@
-import { getHomeData } from "@/lib/api/public";
 import type { HomePageData } from "@/lib/api/types";
-import {
-  FALLBACK_FAQS,
-  FALLBACK_HOME_DATA,
-  FALLBACK_PROJECTS,
-  FALLBACK_SERVICES,
-  FALLBACK_TEAM,
-  FALLBACK_TESTIMONIALS,
-} from "@/lib/home-fallback";
+import { getHomepageData } from "@/lib/services/public-content";
+import { buildSeoObject } from "@/lib/services/seo";
 
 export type HomePageContent = HomePageData;
 
+const EMPTY_HOME: HomePageData = {
+  hero: null,
+  featuredServices: [],
+  featuredProjects: [],
+  featuredTestimonials: [],
+  teamPreview: [],
+  faqPreview: [],
+  robotGuideSettings: null,
+  seo: buildSeoObject({
+    title: "AIVRASOL",
+    description:
+      "Premium AI and digital services for ambitious brands building the future.",
+    path: "/",
+  }),
+  stats: null,
+  settings: {},
+};
+
+/** Server-only: reads MongoDB directly (no HTTP). Never injects demo services/projects. */
 export async function getHomePageContent(): Promise<HomePageContent> {
   try {
-    const data = await getHomeData();
-    return {
-      ...FALLBACK_HOME_DATA,
-      ...data,
-      featuredServices:
-        data.featuredServices?.length > 0
-          ? data.featuredServices
-          : FALLBACK_SERVICES,
-      featuredProjects:
-        data.featuredProjects?.length > 0
-          ? data.featuredProjects
-          : FALLBACK_PROJECTS,
-      featuredTestimonials:
-        data.featuredTestimonials?.length > 0
-          ? data.featuredTestimonials
-          : FALLBACK_TESTIMONIALS,
-      teamPreview:
-        data.teamPreview?.length > 0 ? data.teamPreview : FALLBACK_TEAM,
-      faqPreview: data.faqPreview?.length > 0 ? data.faqPreview : FALLBACK_FAQS,
-    };
-  } catch {
-    return FALLBACK_HOME_DATA;
+    return await getHomepageData();
+  } catch (error) {
+    console.error("[home] failed to load homepage data from database", error);
+    return EMPTY_HOME;
   }
 }

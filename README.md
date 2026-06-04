@@ -322,6 +322,15 @@ All models use `models.X || mongoose.model(...)` for Next.js hot reload safety.
 
 Point your custom domain in Vercel and add both apex and `www` if you use www; the redirect sends traffic to `NEXT_PUBLIC_SITE_URL`’s host.
 
+### MongoDB on Vercel (services/projects missing)
+
+Public pages read **MongoDB directly** on the server. If local admin shows data but production does not:
+
+1. **Environment variables** — In Vercel → Project → Settings → Environment Variables, set `MONGODB_URI` for **Production** (and Preview if needed). Paste the exact Atlas URI from `.env.local`, then **redeploy**.
+2. **Atlas network access** — MongoDB Atlas → Network Access → allow `0.0.0.0/0` (or Vercel’s IP ranges). Without this, Vercel cannot reach your cluster even with the correct URI.
+3. **Publish flags** — In admin, each service/project must be **Active**. **Featured** controls homepage priority; non-featured active items still appear on the homepage and listing pages.
+4. **Health check** — Open `https://your-domain.com/api/health`. Expect `dbConnected: true` and `activeServices` / `activeProjects` greater than 0. If `dbConnected` is false, read `dbError` and fix Atlas URI or network access.
+
 ## Scripts
 
 | Command | Description |

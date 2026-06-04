@@ -1,13 +1,3 @@
-import {
-  getBlogPostBySlug,
-  getBlogPosts,
-  getProjectBySlug,
-  getProjects,
-  getServiceBySlug,
-  getServices,
-  getTeam,
-  getTeamMemberBySlug,
-} from "@/lib/api/public";
 import type {
   BlogDetailData,
   ProjectDetailData,
@@ -19,17 +9,24 @@ import type {
   TeamMemberDetailData,
 } from "@/lib/api/types";
 import {
-  FALLBACK_PROJECTS,
-  FALLBACK_SERVICES,
-  FALLBACK_TEAM,
-} from "@/lib/home-fallback";
+  getPublicBlogBySlug,
+  getPublicProjectBySlug,
+  getPublicServiceBySlug,
+  getPublicTeamBySlug,
+  listPublicBlog,
+  listPublicProjects,
+  listPublicServices,
+  listPublicTeam,
+} from "@/lib/services/public-content";
 
+/** Server components: query MongoDB directly — reliable on Vercel (no self-HTTP). */
 export async function fetchServicesList(): Promise<PublicService[]> {
   try {
-    const res = await getServices({ limit: 50 });
-    return res.data?.length ? res.data : FALLBACK_SERVICES;
-  } catch {
-    return FALLBACK_SERVICES;
+    const { items } = await listPublicServices({ limit: 50 });
+    return items as PublicService[];
+  } catch (error) {
+    console.error("[public-data] failed to load services", error);
+    return [];
   }
 }
 
@@ -37,18 +34,20 @@ export async function fetchServiceDetail(
   slug: string,
 ): Promise<ServiceDetailData | null> {
   try {
-    return await getServiceBySlug(slug);
-  } catch {
+    return (await getPublicServiceBySlug(slug)) as ServiceDetailData;
+  } catch (error) {
+    console.error("[public-data] failed to load service", slug, error);
     return null;
   }
 }
 
 export async function fetchProjectsList(): Promise<PublicProject[]> {
   try {
-    const res = await getProjects({ limit: 50 });
-    return res.data?.length ? res.data : FALLBACK_PROJECTS;
-  } catch {
-    return FALLBACK_PROJECTS;
+    const { items } = await listPublicProjects({ limit: 50 });
+    return items as PublicProject[];
+  } catch (error) {
+    console.error("[public-data] failed to load projects", error);
+    return [];
   }
 }
 
@@ -56,18 +55,19 @@ export async function fetchProjectDetail(
   slug: string,
 ): Promise<ProjectDetailData | null> {
   try {
-    return await getProjectBySlug(slug);
-  } catch {
+    return (await getPublicProjectBySlug(slug)) as ProjectDetailData;
+  } catch (error) {
+    console.error("[public-data] failed to load project", slug, error);
     return null;
   }
 }
 
 export async function fetchTeamList(): Promise<PublicTeamMember[]> {
   try {
-    const data = await getTeam();
-    return data?.length ? data : FALLBACK_TEAM;
-  } catch {
-    return FALLBACK_TEAM;
+    return (await listPublicTeam()) as PublicTeamMember[];
+  } catch (error) {
+    console.error("[public-data] failed to load team", error);
+    return [];
   }
 }
 
@@ -75,17 +75,19 @@ export async function fetchTeamDetail(
   slug: string,
 ): Promise<TeamMemberDetailData | null> {
   try {
-    return await getTeamMemberBySlug(slug);
-  } catch {
+    return (await getPublicTeamBySlug(slug)) as TeamMemberDetailData;
+  } catch (error) {
+    console.error("[public-data] failed to load team member", slug, error);
     return null;
   }
 }
 
 export async function fetchBlogList(): Promise<PublicBlogPost[]> {
   try {
-    const res = await getBlogPosts({ limit: 50 });
-    return res.data ?? [];
-  } catch {
+    const { items } = await listPublicBlog({ limit: 50 });
+    return items as PublicBlogPost[];
+  } catch (error) {
+    console.error("[public-data] failed to load blog", error);
     return [];
   }
 }
@@ -94,8 +96,9 @@ export async function fetchBlogDetail(
   slug: string,
 ): Promise<BlogDetailData | null> {
   try {
-    return await getBlogPostBySlug(slug);
-  } catch {
+    return (await getPublicBlogBySlug(slug)) as BlogDetailData;
+  } catch (error) {
+    console.error("[public-data] failed to load blog post", slug, error);
     return null;
   }
 }
