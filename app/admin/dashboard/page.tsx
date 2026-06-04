@@ -9,6 +9,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { AdminDatabaseBanner } from "@/components/admin/AdminDatabaseBanner";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminTableSkeleton } from "@/components/admin/AdminSkeleton";
 import { StatCard } from "@/components/admin/StatCard";
@@ -42,6 +43,11 @@ export default function AdminDashboardPage() {
         <AdminTableSkeleton rows={6} />
       ) : stats ? (
         <>
+          <AdminDatabaseBanner
+            database={stats.database}
+            totalServices={stats.totalServices}
+            totalProjects={stats.totalProjects}
+          />
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Services" value={stats.totalServices} hint={`${stats.activeServices} active`} icon={Wrench} accent />
             <StatCard label="Projects" value={stats.totalProjects} hint={`${stats.activeProjects} active`} icon={Briefcase} />

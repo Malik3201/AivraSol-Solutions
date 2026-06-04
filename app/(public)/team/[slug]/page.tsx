@@ -1,9 +1,5 @@
 import { notFound } from "next/navigation";
-import { TeamProfileHero } from "@/components/team/TeamProfileHero";
-import { SkillCloud } from "@/components/team/SkillCloud";
-import { PageCTA } from "@/components/site/PageCTA";
-import { PageSection } from "@/components/site/PageSection";
-import { PremiumCard } from "@/components/site/PremiumCard";
+import { TeamProfileLayout } from "@/components/team/profile/TeamProfileLayout";
 import { fetchTeamDetail } from "@/lib/public-data";
 import { createPageMetadata } from "@/lib/seo";
 
@@ -28,26 +24,5 @@ export default async function TeamMemberPage({ params }: Props) {
   const data = await fetchTeamDetail(slug);
   if (!data) notFound();
 
-  const { member } = data;
-
-  return (
-    <>
-      <TeamProfileHero member={member} />
-
-      <PageSection background="editorial" title="About">
-        <PremiumCard>
-          <p className="text-base leading-relaxed text-muted-foreground">
-            {member.bio ??
-              `${member.name} contributes to AIVRASOL deliveries across strategy, design, engineering, and intelligent product layers.`}
-          </p>
-        </PremiumCard>
-      </PageSection>
-
-      <PageSection background="minimal" title="Focus areas">
-        <SkillCloud skills={member.skills} />
-      </PageSection>
-
-      <PageCTA title="Work with AIVRASOL" primaryLabel="Contact us" primaryHref="/contact" />
-    </>
-  );
+  return <TeamProfileLayout data={data} />;
 }

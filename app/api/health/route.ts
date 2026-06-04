@@ -1,5 +1,6 @@
 import { successResponse } from "@/lib/api-response";
 import { connectDB } from "@/lib/db";
+import { getDatabaseDiagnostics } from "@/lib/db-info";
 import { Project } from "@/lib/models/Project";
 import { Service } from "@/lib/models/Service";
 import {
@@ -14,16 +15,23 @@ export async function GET() {
   let dbConnected = false;
   let activeServices = 0;
   let activeProjects = 0;
+  let totalServices = 0;
+  let totalProjects = 0;
   let dbError: string | undefined;
+  let database: Awaited<ReturnType<typeof getDatabaseDiagnostics>> | undefined;
 
   if (isDbConfigured()) {
     try {
       await connectDB();
+      database = await getDatabaseDiagnostics();
       dbConnected = true;
-      [activeServices, activeProjects] = await Promise.all([
-        Service.countDocuments({ isActive: true }),
-        Project.countDocuments({ isActive: true }),
-      ]);
+      [totalServices, activeServices, totalProjects, activeProjects] =
+        await Promise.all([
+          Service.countDocuments(),
+          Service.countDocuments({ isActive: true }),
+          Project.countDocuments(),
+          Project.countDocuments({ isActive: true }),
+        ]);
     } catch (error) {
       dbError =
         error instanceof Error ? error.message : "Database connection failed";
@@ -37,7 +45,10 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       dbConfigured: isDbConfigured(),
       dbConnected,
+      database,
+      totalServices,
       activeServices,
+      totalProjects,
       activeProjects,
       dbError,
       imagekitConfigured: isImageKitConfigured(),

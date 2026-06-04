@@ -1,4 +1,4 @@
-import { TeamCardGrid } from "@/components/team/TeamCardGrid";
+import { TeamMembersSection } from "@/components/team/TeamMembersSection";
 import { PageCTA } from "@/components/site/PageCTA";
 import { PageHero } from "@/components/site/PageHero";
 import { PageSection } from "@/components/site/PageSection";
@@ -31,8 +31,12 @@ export default async function TeamPage() {
         description="AIVRASOL brings together design thinking, engineering discipline, and applied AI to build digital products that feel clear and work reliably."
       />
 
-      <PageSection background="calm" title="The studio">
-        <TeamCardGrid members={members} />
+      <PageSection
+        background="calm"
+        title="The studio"
+        description="Meet the specialists behind AIVRASOL — strategy, design, engineering, and applied intelligence."
+      >
+        <TeamMembersSection members={members} columns="three" />
       </PageSection>
 
       <PageSection background="editorial" title="How we collaborate">

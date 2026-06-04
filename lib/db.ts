@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { dropStaleCollectionIndexes } from "@/lib/db/legacy-indexes";
+import { getMongoDbName } from "@/lib/db-info";
 import { isDbConfigured } from "@/lib/env";
 
 interface MongooseCache {
@@ -34,14 +35,16 @@ export async function connectDB(): Promise<typeof mongoose> {
 
   if (!cached.promise) {
     const uri = process.env.MONGODB_URI!;
+    const dbName = getMongoDbName();
     cached.promise = mongoose
       .connect(uri, {
         bufferCommands: false,
         maxPoolSize: 10,
+        dbName,
       })
       .then((instance) => {
         if (process.env.NODE_ENV === "development") {
-          console.info("[db] connected");
+          console.info(`[db] connected → database "${dbName}"`);
         }
         return instance;
       })

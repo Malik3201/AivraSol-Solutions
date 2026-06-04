@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { teamApi } from "@/lib/api/admin";
 import type { AdminTeamRecord } from "@/lib/api/types";
 import { slugify } from "@/lib/slugify";
+import { getApiErrorMessage } from "@/lib/utils/get-api-error-message";
 import { buttonVariants } from "@/components/ui/button";
 
 const empty = (): AdminTeamRecord & { id?: string } => ({
@@ -68,15 +69,28 @@ export default function AdminTeamPage() {
     }
     setSaving(true);
     const { id, ...body } = form;
+    const payload = {
+      name: body.name.trim(),
+      role: body.role.trim(),
+      slug: (body.slug?.trim() || slugify(body.name)).trim(),
+      bio: body.bio?.trim() || undefined,
+      photo: body.photo?.trim() || undefined,
+      skills: (body.skills ?? []).map((s) => s.trim()).filter(Boolean),
+      socialLinks: body.socialLinks,
+      seoTitle: body.seoTitle?.trim() || undefined,
+      seoDescription: body.seoDescription?.trim() || undefined,
+      seoKeywords: (body.seoKeywords ?? []).map((s) => s.trim()).filter(Boolean),
+      isActive: body.isActive !== false,
+      sortOrder: Number.isFinite(body.sortOrder) ? body.sortOrder : 0,
+    };
     try {
-      const payload = { ...body, slug: body.slug || slugify(body.name), skills: (body.skills ?? []).filter(Boolean) };
       if (id) await teamApi.update(id, payload);
       else await teamApi.create(payload);
       toast.success("Saved");
       setEditorOpen(false);
       void load();
-    } catch {
-      toast.error("Save failed");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Save failed"));
     } finally {
       setSaving(false);
     }

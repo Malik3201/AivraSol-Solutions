@@ -146,6 +146,8 @@ export interface BlogDetailData {
 
 export interface TeamMemberDetailData {
   member: PublicTeamMember;
+  relatedProjects: PublicProject[];
+  relatedTestimonials: PublicTestimonial[];
   seo: SeoObject;
 }
 
@@ -208,7 +210,17 @@ export interface AdminListMeta {
   hasPrevPage: boolean;
 }
 
+export interface AdminDatabaseInfo {
+  connectedDatabase: string | null;
+  configuredDatabase: string;
+  databaseInUri: string | null;
+  clusterHost: string | null;
+  isWrongDatabase: boolean;
+  hint: string | null;
+}
+
 export interface AdminDashboardStats {
+  database: AdminDatabaseInfo;
   totalServices: number;
   activeServices: number;
   totalProjects: number;
@@ -344,6 +356,7 @@ export interface AdminTeamRecord {
   };
   seoTitle?: string;
   seoDescription?: string;
+  seoKeywords?: string[];
   isActive?: boolean;
   sortOrder?: number;
 }

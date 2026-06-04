@@ -1,5 +1,6 @@
 import type { Model } from "mongoose";
 import { connectDB } from "@/lib/db";
+import { getDatabaseDiagnostics } from "@/lib/db-info";
 import { BlogPost } from "@/lib/models/BlogPost";
 import { ContactLead } from "@/lib/models/ContactLead";
 import { FAQ } from "@/lib/models/FAQ";
@@ -29,6 +30,7 @@ import type {
   PublicTeamMember,
   PublicTestimonial,
 } from "@/lib/api/types";
+import { normalizeTeamMember, normalizeTeamMembers } from "@/lib/team/normalize-member";
 
 function stripDoc<T extends { _id: unknown }>(doc: T) {
   const { _id, __v, ...rest } = doc as T & { __v?: unknown };
@@ -75,34 +77,18 @@ export async function getPageSeo(pageKey: SeoPageKey) {
   });
 }
 
-const HOME_FEATURED_LIMIT = 4;
+const HOME_FEATURED_MAX = 24;
 
-/** Featured first, then other active items — so the homepage always reflects CMS data. */
-async function listFeaturedForHome(
+/** All active + featured items for homepage carousels. */
+async function listAllFeaturedForHome(
   model: Model<unknown>,
-  limit: number,
 ): Promise<Array<{ _id: unknown } & Record<string, unknown>>> {
-  const featured = await model
+  return model
     .find({ isActive: true, isFeatured: true })
     .sort(contentSort)
-    .limit(limit)
+    .limit(HOME_FEATURED_MAX)
     .select("-__v")
     .lean();
-
-  if (featured.length >= limit) return featured;
-
-  const featuredIds = featured.map((doc) => doc._id);
-  const more = await model
-    .find({
-      isActive: true,
-      ...(featuredIds.length ? { _id: { $nin: featuredIds } } : {}),
-    })
-    .sort(contentSort)
-    .limit(limit - featured.length)
-    .select("-__v")
-    .lean();
-
-  return [...featured, ...more];
 }
 
 export async function getHomepageData(): Promise<HomePageData> {
@@ -116,8 +102,8 @@ export async function getHomepageData(): Promise<HomePageData> {
     teamPreview,
     faqPreview,
   ] = await Promise.all([
-    listFeaturedForHome(Service, HOME_FEATURED_LIMIT),
-    listFeaturedForHome(Project, HOME_FEATURED_LIMIT),
+    listAllFeaturedForHome(Service),
+    listAllFeaturedForHome(Project),
     Testimonial.find({ isActive: true, isFeatured: true })
       .sort(contentSort)
       .limit(6)
@@ -146,7 +132,7 @@ export async function getHomepageData(): Promise<HomePageData> {
     featuredTestimonials: featuredTestimonials.map(
       stripDoc,
     ) as PublicTestimonial[],
-    teamPreview: teamPreview.map(stripDoc) as PublicTeamMember[],
+    teamPreview: normalizeTeamMembers(teamPreview.map(stripDoc)),
     faqPreview: faqPreview.map(stripDoc) as PublicFAQ[],
     robotGuideSettings,
     seo: await getPageSeo("home"),
@@ -310,7 +296,7 @@ export async function listPublicTeam() {
     .sort({ sortOrder: 1, createdAt: -1 })
     .select("-__v")
     .lean();
-  return members.map(stripDoc);
+  return normalizeTeamMembers(members.map(stripDoc));
 }
 
 export async function getPublicTeamBySlug(slug: string) {
@@ -320,8 +306,15 @@ export async function getPublicTeamBySlug(slug: string) {
     .lean();
   if (!member) throw new ApiError("Team member not found", 404);
 
+  const [relatedProjects, relatedTestimonials] = await Promise.all([
+    Project.find({ isActive: true }).sort(contentSort).limit(4).select("-__v").lean(),
+    Testimonial.find({ isActive: true }).sort(contentSort).limit(4).select("-__v").lean(),
+  ]);
+
   return {
-    member: stripDoc(member),
+    member: normalizeTeamMember(stripDoc(member)),
+    relatedProjects: relatedProjects.map(stripDoc) as unknown as PublicProject[],
+    relatedTestimonials: relatedTestimonials.map(stripDoc) as unknown as PublicTestimonial[],
     seo: buildSeoFromContent({
       title: member.name,
       shortDescription: member.role,
@@ -459,7 +452,33 @@ export async function createContactLead(data: {
 }
 
 export async function getAdminDashboardStats() {
-  await connectDB();
+  const [database, counts] = await Promise.all([
+    getDatabaseDiagnostics(),
+    (async () => {
+      await connectDB();
+      return Promise.all([
+        Service.countDocuments(),
+        Service.countDocuments({ isActive: true }),
+        Project.countDocuments(),
+        Project.countDocuments({ isActive: true }),
+        TeamMember.countDocuments(),
+        Testimonial.countDocuments(),
+        FAQ.countDocuments(),
+        BlogPost.countDocuments(),
+        BlogPost.countDocuments({ status: "published" }),
+        ContactLead.countDocuments(),
+        ContactLead.countDocuments({ status: "new" }),
+        ContactLead.find().sort({ createdAt: -1 }).limit(5).lean(),
+        import("@/lib/models/AiLog").then(({ AiLog }) =>
+          AiLog.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .select("-prompt -response")
+            .lean(),
+        ),
+      ]);
+    })(),
+  ]);
 
   const [
     totalServices,
@@ -475,23 +494,7 @@ export async function getAdminDashboardStats() {
     newContactLeads,
     recentContactLeads,
     recentAiLogs,
-  ] = await Promise.all([
-    Service.countDocuments(),
-    Service.countDocuments({ isActive: true }),
-    Project.countDocuments(),
-    Project.countDocuments({ isActive: true }),
-    TeamMember.countDocuments(),
-    Testimonial.countDocuments(),
-    FAQ.countDocuments(),
-    BlogPost.countDocuments(),
-    BlogPost.countDocuments({ status: "published" }),
-    ContactLead.countDocuments(),
-    ContactLead.countDocuments({ status: "new" }),
-    ContactLead.find().sort({ createdAt: -1 }).limit(5).lean(),
-    import("@/lib/models/AiLog").then(({ AiLog }) =>
-      AiLog.find().sort({ createdAt: -1 }).limit(5).select("-prompt -response").lean(),
-    ),
-  ]);
+  ] = counts;
 
   const recentUpdatedContent = await Promise.all([
     Service.find().sort({ updatedAt: -1 }).limit(3).select("title slug updatedAt").lean(),
@@ -500,6 +503,7 @@ export async function getAdminDashboardStats() {
   ]);
 
   return {
+    database,
     totalServices,
     activeServices,
     totalProjects,

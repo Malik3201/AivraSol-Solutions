@@ -5,7 +5,7 @@ import { AivaWaypoint } from "@/components/home/aiva/AivaWaypoint";
 import { HomeSection } from "@/components/home/HomeSection";
 import { AIVA_WAYPOINT_MESSAGES } from "@/lib/aiva-waypoints";
 import type { PublicTeamMember } from "@/lib/api/types";
-import { TeamCardGrid } from "@/components/team/TeamCardGrid";
+import { TeamMembersSection } from "@/components/team/TeamMembersSection";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ export function TeamPreview({ members }: { members: PublicTeamMember[] }) {
         <AivaGuide message={AIVA_WAYPOINT_MESSAGES.team} className="mb-6 md:mb-8" />
         <div className="relative">
           <AivaDock id="team" className="right-6 top-24 md:right-10" />
-          <TeamCardGrid members={list} ariaLabel="Team preview" />
+          <TeamMembersSection members={list} columns="responsive" />
         </div>
         <div className="mt-8 text-center sm:mt-10">
           <Link

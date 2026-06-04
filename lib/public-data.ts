@@ -64,7 +64,7 @@ export async function fetchProjectDetail(
 
 export async function fetchTeamList(): Promise<PublicTeamMember[]> {
   try {
-    return (await listPublicTeam()) as PublicTeamMember[];
+    return await listPublicTeam();
   } catch (error) {
     console.error("[public-data] failed to load team", error);
     return [];

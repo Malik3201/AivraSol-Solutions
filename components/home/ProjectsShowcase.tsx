@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ProjectsCardGrid } from "@/components/projects/ProjectsCardGrid";
 import { AivaDock } from "@/components/home/AivaDock";
 import { AivaGuide } from "@/components/home/aiva/AivaGuide";
@@ -14,11 +13,10 @@ export function FeaturedProjectsSection({
 }: {
   projects: PublicProject[];
 }) {
-  const list = projects.slice(0, 4);
-  const featuredId =
-    list.find((p) => p.isFeatured)?.id ?? list[0]?.id;
+  if (!projects.length) return null;
 
-  if (!list.length) return null;
+  const featuredId =
+    projects.find((p) => p.isFeatured)?.id ?? projects[0]?.id;
 
   return (
     <AivaWaypoint id="projects">
@@ -27,12 +25,12 @@ export function FeaturedProjectsSection({
         background="stage"
         eyebrow="Featured Projects"
         title="Where strategy becomes measurable product."
-        description="Selected case studies across industries — swipe on mobile to explore recent work."
+        description="All featured case studies — the carousel auto-advances; hover to pause."
       >
         <AivaGuide message={AIVA_WAYPOINT_MESSAGES.projects} className="mb-6 md:mb-8" />
         <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground md:hidden">
-            Swipe to browse featured projects
+          <p className="text-sm text-muted-foreground">
+            Auto-playing carousel · hover to pause
           </p>
           <MagneticButton
             href="/projects"
@@ -46,16 +44,12 @@ export function FeaturedProjectsSection({
         <div className="relative">
           <AivaDock id="projects" className="bottom-[20%] left-[50%] top-auto -translate-x-1/2" />
           <ProjectsCardGrid
-            projects={list}
+            projects={projects}
             featuredId={featuredId}
+            variant="featured"
             ariaLabel="Featured projects"
           />
         </div>
-        <p className="mt-6 text-center md:hidden">
-          <Link href="/projects" className="text-sm text-primary">
-            View all projects →
-          </Link>
-        </p>
       </HomeSection>
     </AivaWaypoint>
   );

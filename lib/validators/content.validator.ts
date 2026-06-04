@@ -6,12 +6,48 @@ const processStepSchema = z.object({
   description: z.string().min(1),
 });
 
-const socialLinksSchema = z.object({
-  linkedin: z.string().url().optional().or(z.literal("")),
-  github: z.string().url().optional().or(z.literal("")),
-  twitter: z.string().url().optional().or(z.literal("")),
-  website: z.string().url().optional().or(z.literal("")),
-});
+/** Empty string or valid URL (admin forms often send ""). */
+const optionalUrl = z.union([z.literal(""), z.string().trim().url()]).optional();
+
+function normalizeSocialUrl(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = String(value).trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+const socialLinksSchema = z
+  .object({
+    linkedin: optionalUrl,
+    github: optionalUrl,
+    twitter: optionalUrl,
+    website: optionalUrl,
+  })
+  .partial()
+  .optional()
+  .transform((links) => {
+    if (!links) return undefined;
+    const cleaned: Record<string, string> = {};
+    for (const [key, value] of Object.entries(links)) {
+      if (value && value !== "") cleaned[key] = value;
+    }
+    return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+  });
+
+const socialLinksInputSchema = z.preprocess(
+  (val) => {
+    if (!val || typeof val !== "object") return undefined;
+    const o = val as Record<string, unknown>;
+    return {
+      linkedin: normalizeSocialUrl(o.linkedin),
+      github: normalizeSocialUrl(o.github),
+      twitter: normalizeSocialUrl(o.twitter),
+      website: normalizeSocialUrl(o.website),
+    };
+  },
+  socialLinksSchema,
+);
 
 const seoFieldsSchema = z.object({
   seoTitle: z.string().max(200).optional(),
@@ -64,21 +100,53 @@ export const projectCreateSchema = z
 
 export const projectUpdateSchema = projectCreateSchema.partial();
 
-export const teamMemberCreateSchema = z
+const teamMemberBaseSchema = z
   .object({
-    name: z.string().min(1).max(200),
-    slug: z.string().min(1).max(200).optional(),
-    role: z.string().min(1).max(200),
+    name: z.string().trim().min(1).max(200),
+    slug: z.string().trim().min(1).max(200).optional(),
+    role: z.string().trim().min(1).max(200),
     bio: z.string().max(5000).optional(),
-    photo: z.string().optional(),
-    skills: z.array(z.string()).optional(),
-    socialLinks: socialLinksSchema.optional(),
+    photo: z.union([z.literal(""), z.string().trim()]).optional(),
+    skills: z.array(z.string().trim()).optional(),
+    socialLinks: socialLinksInputSchema,
     isActive: z.boolean().optional(),
-    sortOrder: z.number().optional(),
+    sortOrder: z.coerce.number().optional(),
   })
   .merge(seoFieldsSchema);
 
-export const teamMemberUpdateSchema = teamMemberCreateSchema.partial();
+function normalizeTeamMemberInput(
+  data: z.infer<typeof teamMemberBaseSchema>,
+) {
+  return {
+    ...data,
+    photo: data.photo && data.photo !== "" ? data.photo : undefined,
+    skills: data.skills?.filter(Boolean),
+    seoKeywords: data.seoKeywords?.filter(Boolean),
+  };
+}
+
+function normalizeTeamMemberPatch(
+  data: Partial<z.infer<typeof teamMemberBaseSchema>>,
+) {
+  const out: Partial<z.infer<typeof teamMemberBaseSchema>> = { ...data };
+  if ("photo" in data) {
+    out.photo =
+      data.photo && data.photo !== "" ? data.photo : undefined;
+  }
+  if (data.skills) out.skills = data.skills.filter(Boolean);
+  if (data.seoKeywords) {
+    out.seoKeywords = data.seoKeywords.filter(Boolean);
+  }
+  return out;
+}
+
+export const teamMemberCreateSchema = teamMemberBaseSchema.transform(
+  normalizeTeamMemberInput,
+);
+
+export const teamMemberUpdateSchema = teamMemberBaseSchema
+  .partial()
+  .transform(normalizeTeamMemberPatch);
 
 export const testimonialCreateSchema = z.object({
   clientName: z.string().min(1).max(200),

@@ -23,12 +23,12 @@ export function FeaturedServicesSection({
         background="bento"
         eyebrow="Featured Services"
         title="Capabilities engineered for serious growth."
-        description="Strategy-led delivery across platforms, automation, and intelligent product layers — swipe on mobile to explore."
+        description="All featured capabilities — the carousel auto-advances; hover to pause."
       >
         <AivaGuide message={AIVA_WAYPOINT_MESSAGES.services} className="mb-6 md:mb-8" />
         <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground md:hidden">
-            Swipe to browse featured services
+          <p className="text-sm text-muted-foreground">
+            Auto-playing carousel · hover to pause
           </p>
           <Link
             href="/services"

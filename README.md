@@ -29,7 +29,8 @@ Copy `.env.example` to `.env.local`. Server and public env are validated separat
 | Variable | Scope | Purpose |
 |----------|-------|---------|
 | `NEXT_PUBLIC_SITE_URL` | Public | Canonical site URL (SEO, sitemap) |
-| `MONGODB_URI` | Server | MongoDB Atlas connection string |
+| `MONGODB_URI` | Server | MongoDB Atlas connection string (include `/AivraSol` in the path) |
+| `MONGODB_DB_NAME` | Server | Database name (default `AivraSol`) — keeps local and Vercel on the same DB |
 | `ADMIN_JWT_SECRET` | Server | JWT signing secret (16+ chars) |
 | `ADMIN_JWT_EXPIRES_IN` | Server | Token/cookie lifetime (e.g. `7d`) |
 | `ADMIN_SEED_*` | Server | Initial super admin for seed script |
@@ -322,14 +323,22 @@ All models use `models.X || mongoose.model(...)` for Next.js hot reload safety.
 
 Point your custom domain in Vercel and add both apex and `www` if you use www; the redirect sends traffic to `NEXT_PUBLIC_SITE_URL`’s host.
 
-### MongoDB on Vercel (services/projects missing)
+### MongoDB on Vercel (local admin has data, Vercel admin is empty)
 
-Public pages read **MongoDB directly** on the server. If local admin shows data but production does not:
+Local and Vercel often use the **same Atlas cluster** but a **different database name**. If the URI omits `/AivraSol`, MongoDB uses the default `test` database — Vercel writes there, while your local CMS uses `AivraSol`.
 
-1. **Environment variables** — In Vercel → Project → Settings → Environment Variables, set `MONGODB_URI` for **Production** (and Preview if needed). Paste the exact Atlas URI from `.env.local`, then **redeploy**.
-2. **Atlas network access** — MongoDB Atlas → Network Access → allow `0.0.0.0/0` (or Vercel’s IP ranges). Without this, Vercel cannot reach your cluster even with the correct URI.
-3. **Publish flags** — In admin, each service/project must be **Active**. **Featured** controls homepage priority; non-featured active items still appear on the homepage and listing pages.
-4. **Health check** — Open `https://your-domain.com/api/health`. Expect `dbConnected: true` and `activeServices` / `activeProjects` greater than 0. If `dbConnected` is false, read `dbError` and fix Atlas URI or network access.
+**Fix (recommended):**
+
+1. Vercel → **Settings → Environment Variables** (Production):
+   - `MONGODB_URI` — copy **exactly** from `.env.local` (must include `/AivraSol` before `?`)
+   - `MONGODB_DB_NAME` — `AivraSol`
+2. **Redeploy** (required after env changes).
+3. Open **Admin → Dashboard** on Vercel — the database banner should show `Connected: AivraSol` and your service/project counts.
+4. Check `https://your-domain.com/api/health` — `database.connectedDatabase` should be `AivraSol`, and `totalServices` / `totalProjects` should match local.
+
+If you already created a “test” service on Vercel, it may live in the `test` database. After fixing env, re-create it or copy documents in Atlas from `test` → `AivraSol`.
+
+**Also verify:** Atlas → **Network Access** → allow `0.0.0.0/0` (or Vercel IPs). Each CMS item must be **Active** to show on the public site.
 
 ## Scripts
 

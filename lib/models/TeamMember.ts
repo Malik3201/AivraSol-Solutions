@@ -23,6 +23,7 @@ const TeamMemberSchema = new Schema(
     isActive: { type: Boolean, default: true, index: true },
     seoTitle: { type: String },
     seoDescription: { type: String },
+    seoKeywords: { type: [String], default: [] },
   },
   { timestamps: true },
 );
