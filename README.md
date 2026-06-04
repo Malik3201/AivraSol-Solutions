@@ -305,6 +305,23 @@ scripts/
 
 All models use `models.X || mongoose.model(...)` for Next.js hot reload safety.
 
+## Deploy on Vercel
+
+1. Import this repository in [Vercel](https://vercel.com/new) (framework: **Next.js** — auto-detected).
+2. Add environment variables from `.env.example` in the Vercel project **Settings → Environment Variables**.
+3. Set `NEXT_PUBLIC_SITE_URL` to your production URL (e.g. `https://aivrasol.com`) for **Production** — used for SEO and www → apex redirects (same path, canonical host).
+4. Deploy. Preview deployments use `*.vercel.app`; host redirects are skipped for preview URLs.
+
+`vercel.json` sets the build/install commands and default region. Redirects and rewrites live in `next.config.ts` via `lib/build-redirects.ts`:
+
+| Rule | Behavior |
+|------|----------|
+| `www.` → apex | `www.example.com/foo` → `https://example.com/foo` (same path) |
+| Trailing slash | `/about/` → `/about` |
+| Legacy Aiva API | `/api/ai/aiva/chat` → `/api/aiva/chat` (rewrite, POST-safe) |
+
+Point your custom domain in Vercel and add both apex and `www` if you use www; the redirect sends traffic to `NEXT_PUBLIC_SITE_URL`’s host.
+
 ## Scripts
 
 | Command | Description |
@@ -326,6 +343,8 @@ scripts/             # CLI utilities
 middleware.ts        # Admin route protection
 package.json
 next.config.ts
+vercel.json
+lib/build-redirects.ts
 tsconfig.json
 .env.example
 ```
