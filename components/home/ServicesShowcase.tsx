@@ -7,19 +7,34 @@ import { HomeSection } from "@/components/home/HomeSection";
 import { AIVA_WAYPOINT_MESSAGES } from "@/lib/aiva-waypoints";
 import type { PublicService } from "@/lib/api/types";
 import { buttonVariants } from "@/components/ui/button";
-export function ServicesShowcase({ services }: { services: PublicService[] }) {
+import { cn } from "@/lib/utils";
+
+export function FeaturedServicesSection({
+  services,
+}: {
+  services: PublicService[];
+}) {
   return (
     <AivaWaypoint id="services">
       <HomeSection
-        id="services"
+        id="featured-services"
         background="bento"
-        eyebrow="Services"
+        eyebrow="Featured Services"
         title="Capabilities engineered for serious growth."
-        description="Strategy-led delivery across platforms, automation, and intelligent product layers."
+        description="Strategy-led delivery across platforms, automation, and intelligent product layers — swipe on mobile to explore."
       >
-        <AivaGuide message={AIVA_WAYPOINT_MESSAGES.services} className="mb-8" />
-        <div className="mb-8 flex justify-end">
-          <Link href="/services" className={buttonVariants({ variant: "outline" })}>
+        <AivaGuide message={AIVA_WAYPOINT_MESSAGES.services} className="mb-6 md:mb-8" />
+        <div className="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground md:hidden">
+            Swipe to browse featured services
+          </p>
+          <Link
+            href="/services"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "w-full sm:ml-auto sm:w-auto",
+            )}
+          >
             View all services
           </Link>
         </div>
@@ -31,3 +46,6 @@ export function ServicesShowcase({ services }: { services: PublicService[] }) {
     </AivaWaypoint>
   );
 }
+
+/** @deprecated Use FeaturedServicesSection */
+export const ServicesShowcase = FeaturedServicesSection;

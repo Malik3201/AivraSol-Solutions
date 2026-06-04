@@ -13,6 +13,9 @@ const serverEnvSchema = z.object({
   IMAGEKIT_PUBLIC_KEY: z.string().optional(),
   IMAGEKIT_PRIVATE_KEY: z.string().optional(),
   IMAGEKIT_URL_ENDPOINT: z.string().url().optional(),
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_MODEL: z.string().optional(),
+  /** @deprecated Use GROQ_* — kept for backward compatibility during migration */
   LONGCAT_API_KEY: z.string().optional(),
   LONGCAT_BASE_URL: z.string().url().optional(),
   LONGCAT_MODEL: z.string().optional(),
@@ -90,12 +93,20 @@ export function isImageKitConfigured(): boolean {
   );
 }
 
+export function isGroqConfigured(): boolean {
+  return Boolean(process.env.GROQ_API_KEY?.trim());
+}
+
+/** @deprecated Use isGroqConfigured */
 export function isLongCatConfigured(): boolean {
-  return Boolean(
-    process.env.LONGCAT_API_KEY?.trim() && process.env.LONGCAT_BASE_URL?.trim(),
-  );
+  return isGroqConfigured();
+}
+
+export function isAiConfigured(): boolean {
+  return isGroqConfigured();
 }
 
 export function isAdminAuthConfigured(): boolean {
-  return Boolean(process.env.ADMIN_JWT_SECRET?.trim());
+  const secret = process.env.ADMIN_JWT_SECRET?.trim();
+  return Boolean(secret && secret.length >= 16);
 }

@@ -14,6 +14,9 @@ export class ApiError extends Error {
 
 export function handleApiError(error: unknown) {
   if (error instanceof ApiError) {
+    if (process.env.NODE_ENV === "development") {
+      console.error(`[api] ${error.statusCode}`, error.message);
+    }
     return errorResponse(error.message, error.statusCode, error.details);
   }
 

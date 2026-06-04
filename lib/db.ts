@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { dropStaleCollectionIndexes } from "@/lib/db/legacy-indexes";
 import { isDbConfigured } from "@/lib/env";
 
 interface MongooseCache {
@@ -9,6 +10,8 @@ interface MongooseCache {
 declare global {
   // eslint-disable-next-line no-var
   var mongooseCache: MongooseCache | undefined;
+  // eslint-disable-next-line no-var
+  var dbLegacyIndexesDropped: boolean | undefined;
 }
 
 const cached: MongooseCache = global.mongooseCache ?? {
@@ -52,6 +55,12 @@ export async function connectDB(): Promise<typeof mongoose> {
   }
 
   cached.conn = await cached.promise;
+
+  if (!global.dbLegacyIndexesDropped) {
+    await dropStaleCollectionIndexes();
+    global.dbLegacyIndexesDropped = true;
+  }
+
   return cached.conn;
 }
 

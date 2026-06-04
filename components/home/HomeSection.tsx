@@ -30,8 +30,8 @@ export function HomeSection({
     <section
       id={id}
       className={cn(
-        "relative isolate overflow-hidden scroll-mt-28 border-t border-white/[0.06] bg-[#060a08] py-24 md:py-32 lg:py-36",
-        tall && "min-h-[640px]",
+        "relative isolate overflow-hidden scroll-mt-24 border-t border-white/[0.06] bg-[#060a08] py-16 sm:py-20 md:py-28 lg:py-36",
+        tall && "md:min-h-[640px]",
         className,
       )}
     >

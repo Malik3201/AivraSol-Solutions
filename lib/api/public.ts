@@ -1,8 +1,11 @@
 import { apiFetch, apiFetchWithMeta } from "@/lib/api/client";
 import type {
+  AivaChatRequest,
   AivaChatResponse,
   BlogDetailData,
+  ContactAssistInput,
   ContactAssistResponse,
+  ContactInput,
   HomePageData,
   ProjectDetailData,
   PublicBlogPost,
@@ -83,41 +86,22 @@ export function getPublicSettings() {
   return apiFetch<Record<string, unknown>>("/api/public/settings");
 }
 
-export function submitContact(data: {
-  name: string;
-  email: string;
-  message: string;
-  phone?: string;
-  company?: string;
-  serviceInterest?: string;
-  budgetRange?: string;
-  aiGeneratedDraft?: string;
-}) {
+export function submitContact(data: ContactInput) {
   return apiFetch<{ lead: { id: string; status: string } }>("/api/contact", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export function assistContactMessage(data: {
-  name?: string;
-  serviceInterest: string;
-  roughIdea: string;
-  tone?: string;
-}) {
+export function assistContactMessage(data: ContactAssistInput) {
   return apiFetch<ContactAssistResponse>("/api/contact/assist", {
     method: "POST",
     body: JSON.stringify(data),
   });
 }
 
-export function aivaChat(data: {
-  message: string;
-  sessionId?: string;
-  pageContext?: string;
-  currentPage?: string;
-}) {
-  return apiFetch<AivaChatResponse>("/api/ai/aiva/chat", {
+export function aivaChat(data: AivaChatRequest) {
+  return apiFetch<AivaChatResponse>("/api/aiva/chat", {
     method: "POST",
     body: JSON.stringify(data),
   });

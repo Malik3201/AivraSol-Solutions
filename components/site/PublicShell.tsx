@@ -7,7 +7,7 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
     <div className="relative flex min-h-screen flex-col">
       <AnimatedBackground variant="subtle" className="fixed inset-0 -z-10 opacity-50" />
       <SiteHeader />
-      <main className="relative z-10 flex-1">{children}</main>
+      <main className="relative z-10 flex-1 overflow-x-clip">{children}</main>
       <SiteFooter />
     </div>
   );

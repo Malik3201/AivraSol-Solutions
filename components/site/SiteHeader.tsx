@@ -29,7 +29,7 @@ export function SiteHeader() {
           : "border-b border-transparent bg-transparent",
       )}
     >
-      <div className="mx-auto flex h-[72px] w-full max-w-[1180px] items-center justify-between gap-6 px-6 sm:px-8 lg:px-10">
+      <div className="mx-auto flex h-16 w-full max-w-[1180px] items-center justify-between gap-4 px-4 sm:h-[72px] sm:gap-6 sm:px-6 md:px-8 lg:px-10">
         <Logo />
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">

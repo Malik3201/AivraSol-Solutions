@@ -13,8 +13,13 @@ export class ApiClientError extends Error {
 }
 
 function getBaseUrl(): string {
-  if (typeof window !== "undefined") return "";
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return (
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    "http://127.0.0.1:3000"
+  );
 }
 
 export interface FetchOptions extends RequestInit {
@@ -22,8 +27,9 @@ export interface FetchOptions extends RequestInit {
 }
 
 function buildUrl(path: string, params?: FetchOptions["params"]): string {
-  const base = getBaseUrl();
-  const url = new URL(path.startsWith("http") ? path : `${base}${path}`);
+  const url = path.startsWith("http")
+    ? new URL(path)
+    : new URL(path.startsWith("/") ? path : `/${path}`, getBaseUrl());
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== "") {

@@ -14,6 +14,7 @@ import {
   updateDocument,
   withId,
 } from "@/lib/services/admin-crud";
+import { withServiceLegacyName } from "@/lib/db/legacy-indexes";
 import { Service } from "@/lib/models/Service";
 import { serviceUpdateSchema } from "@/lib/validators/content.validator";
 import type { RouteContext } from "@/lib/utils/async-handler";
@@ -37,12 +38,27 @@ export const PATCH = asyncHandler(async (request: NextRequest, context?: RouteCo
     throw new ApiError("Invalid service data", 400, parsed.error.flatten());
   }
 
+  const existing = await getDocumentById(Service, id, "Service not found");
+
   const data: Record<string, unknown> = { ...parsed.data };
   if (parsed.data.title || parsed.data.slug) {
     data.slug = await resolveSlug(Service, parsed.data, id);
   }
 
-  const doc = await updateDocument(Service, id, data, "Service not found");
+  const title =
+    (typeof parsed.data.title === "string" && parsed.data.title.trim()) ||
+    (typeof existing.title === "string" && existing.title.trim()) ||
+    "";
+  if (title) {
+    data.name = title;
+  }
+
+  const doc = await updateDocument(
+    Service,
+    id,
+    withServiceLegacyName(data),
+    "Service not found",
+  );
   return successResponse(withId(doc), "Service updated");
 });
 

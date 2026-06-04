@@ -1,11 +1,21 @@
 import type { Metadata } from "next";
 import {
+  buildBlogSchema,
   buildPageMetadata,
+  buildProjectSchema,
+  buildServiceSchema,
   defaultMetadata,
   getSiteUrl,
 } from "@/lib/services/seo";
 
-export { buildPageMetadata, defaultMetadata, getSiteUrl };
+export {
+  buildBlogSchema,
+  buildPageMetadata,
+  buildProjectSchema,
+  buildServiceSchema,
+  defaultMetadata,
+  getSiteUrl,
+};
 
 export function createPageMetadata({
   title,

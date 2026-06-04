@@ -9,7 +9,7 @@ Premium AI and digital services website for **AIVRASOL**, built as a single Next
 - **MongoDB Atlas** + **Mongoose**
 - **JWT admin auth** (`jose`, httpOnly cookie)
 - **Zod** validation
-- **ImageKit**, **LongCat AI**, **Framer Motion**, **GSAP**
+- **ImageKit**, **Groq AI**, **Framer Motion**, **GSAP**
 
 ## Getting started
 
@@ -34,7 +34,7 @@ Copy `.env.example` to `.env.local`. Server and public env are validated separat
 | `ADMIN_JWT_EXPIRES_IN` | Server | Token/cookie lifetime (e.g. `7d`) |
 | `ADMIN_SEED_*` | Server | Initial super admin for seed script |
 | `IMAGEKIT_*` | Server / Public | Media upload and CDN |
-| `LONGCAT_*` | Server | LongCat AI API |
+| `GROQ_*` | Server | Groq AI API (chat completions) |
 | `CONTACT_RECEIVER_EMAIL` | Server | Contact notification target |
 
 Never commit `.env.local` or log secret values.
@@ -176,15 +176,17 @@ Requires `IMAGEKIT_*` env vars. Private key is server-only.
 Allowed folders: `/aivrasol/services`, `/projects`, `/team`, `/blog`, `/brand`, `/general`  
 Allowed types: JPEG, PNG, WebP, AVIF (max 5MB). SVG rejected.
 
-## LongCat AI
+## Groq AI
 
-Env: `LONGCAT_API_KEY`, `LONGCAT_BASE_URL`, `LONGCAT_MODEL`
+Env: `GROQ_API_KEY`, `GROQ_MODEL` (default: `llama-3.3-70b-versatile`)
+
+Uses the OpenAI-compatible endpoint `https://api.groq.com/openai/v1/chat/completions`. See [Groq models](https://console.groq.com/docs/models) for other IDs (e.g. `llama-3.1-8b-instant`, `openai/gpt-oss-20b`).
 
 OpenAI-compatible chat completions with timeout, safe errors, and `AiLog` auditing.
 
 ### Public AIVA chatbot
 
-`POST /api/ai/aiva/chat`
+`POST /api/aiva/chat` (alias: `POST /api/ai/aiva/chat`)
 
 ```json
 { "message": "...", "sessionId": "optional", "pageContext": "optional", "currentPage": "/services" }
@@ -211,7 +213,7 @@ All require admin cookie. Return drafts only — save via normal CMS CRUD.
 | `POST /api/ai/admin/faq-content` | FAQ set draft |
 | `POST /api/ai/admin/seo-content` | SEO metadata draft |
 
-If LongCat is unavailable, a fallback template is returned with `aiNotice`.
+If Groq is unavailable, a fallback template is returned with `aiNotice`.
 
 ## Contact workflow
 
@@ -229,7 +231,7 @@ In-memory limiter in `lib/utils/rate-limit.ts` (development/small deploy). **Use
 | `POST /api/auth/login` | 10 / 15 min per IP |
 | `POST /api/contact` | 5 / 15 min per IP |
 | `POST /api/contact/assist` | 10 / 15 min per IP |
-| `POST /api/ai/aiva/chat` | 20 / 10 min per session or IP |
+| `POST /api/aiva/chat` (alias: `POST /api/ai/aiva/chat`) | 20 / 10 min per session or IP |
 | Admin AI routes | 30 / hour per admin |
 
 Returns `429` with `{ success: false, message, errors: { retryAfter } }`.
@@ -239,7 +241,7 @@ Returns `429` with `{ success: false, message, errors: { retryAfter } }`.
 - [ ] Strong `ADMIN_JWT_SECRET` (32+ random characters)
 - [ ] Strong seeded admin password; rotate after first login
 - [ ] MongoDB Atlas IP allowlist / VPC peering
-- [ ] Never expose `IMAGEKIT_PRIVATE_KEY` or `LONGCAT_API_KEY` to the client
+- [ ] Never expose `IMAGEKIT_PRIVATE_KEY` or `GROQ_API_KEY` to the client
 - [ ] Set `NODE_ENV=production` and HTTPS-only cookies
 - [ ] Replace in-memory rate limiter with Redis for multi-instance deploys
 - [ ] Configure `CONTACT_RECEIVER_EMAIL` + SMTP when ready
@@ -284,7 +286,7 @@ lib/services/
 ├── public-content.ts      # Public read aggregations
 ├── admin-crud.ts          # Shared CRUD helpers
 ├── imagekit.ts            # Upload, delete, thumbnails
-├── longcat.ts             # AI completions + feature wrappers
+├── longcat.ts             # Groq AI completions + feature wrappers
 ├── contact.ts             # Lead save + email placeholder
 └── seo.ts                 # Metadata + JSON-LD schemas
 
@@ -332,7 +334,7 @@ tsconfig.json
 
 1. Admin login UI + media picker wired to `/api/upload/*`
 2. Wire public pages to `/api/public/*` and JSON-LD schema routes
-3. AIVA chat widget → `/api/ai/aiva/chat`
+3. AIVA chat widget → `/api/aiva/chat`
 4. SMTP/nodemailer for contact notifications
 5. Redis rate limiter for production
 6. AIVA scroll experience (`components/aiva/`)

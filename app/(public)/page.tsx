@@ -5,8 +5,8 @@ import { FinalCTA } from "@/components/home/FinalCTA";
 import { HomeHero } from "@/components/home/HomeHero";
 import { IntroSection } from "@/components/home/IntroSection";
 import { ProcessSection } from "@/components/home/ProcessSection";
-import { ProjectsShowcase } from "@/components/home/ProjectsShowcase";
-import { ServicesShowcase } from "@/components/home/ServicesShowcase";
+import { FeaturedProjectsSection } from "@/components/home/ProjectsShowcase";
+import { FeaturedServicesSection } from "@/components/home/ServicesShowcase";
 import { TeamPreview } from "@/components/home/TeamPreview";
 import { TechStackSection } from "@/components/home/TechStackSection";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
@@ -32,9 +32,9 @@ export default async function HomePage() {
 
       <div id="aiva-journey" className="relative overflow-x-clip">
         <IntroSection />
-        <ServicesShowcase services={content.featuredServices} />
+        <FeaturedServicesSection services={content.featuredServices} />
         <ProcessSection />
-        <ProjectsShowcase projects={content.featuredProjects} />
+        <FeaturedProjectsSection projects={content.featuredProjects} />
         <AIWorkflowSection />
         <TeamPreview members={content.teamPreview} />
         <TestimonialsSection testimonials={content.featuredTestimonials} />

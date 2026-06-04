@@ -17,8 +17,9 @@ export function PremiumCard({
   const reduce = useReducedMotion();
 
   const classes = cn(
-    "group relative block overflow-hidden rounded-2xl border border-border/70 bg-surface/80 p-6 backdrop-blur-xl transition-colors md:p-8",
-    "before:pointer-events-none before:absolute before:inset-0 before:rounded-2xl before:bg-gradient-to-br before:from-primary/10 before:via-transparent before:to-transparent before:opacity-0 before:transition-opacity hover:before:opacity-100",
+    "group relative block overflow-hidden rounded-3xl border border-white/[0.08] bg-[rgba(10,16,14,0.65)] p-6 backdrop-blur-xl transition-colors md:p-8",
+    "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]",
+    "before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:bg-gradient-to-br before:from-primary/[0.08] before:via-transparent before:to-transparent before:opacity-0 before:transition-opacity hover:border-primary/20 hover:before:opacity-100",
     className,
   );
 

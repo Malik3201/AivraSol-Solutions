@@ -5,8 +5,8 @@ import { asyncHandler } from "@/lib/utils/async-handler";
 import { assertRateLimit, getRateLimitKey } from "@/lib/utils/rate-limit";
 import { getClientIp } from "@/lib/utils/request-ip";
 import {
+  attachAdminSessionCookie,
   comparePassword,
-  setAdminSessionCookie,
   signAdminToken,
 } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
@@ -15,6 +15,10 @@ import { Admin, toSafeAdmin } from "@/lib/models/Admin";
 import { adminLoginSchema } from "@/lib/validators/auth.validator";
 
 export const POST = asyncHandler(async (request: NextRequest) => {
+  if (process.env.NODE_ENV === "development") {
+    console.info("[auth] POST /api/auth/login");
+  }
+
   assertRateLimit({
     key: getRateLimitKey("login", getClientIp(request)),
     limit: 10,
@@ -57,10 +61,10 @@ export const POST = asyncHandler(async (request: NextRequest) => {
     role: admin.role,
   });
 
-  await setAdminSessionCookie(token);
-
-  return successResponse(
+  const response = successResponse(
     { admin: toSafeAdmin(admin) },
     "Logged in successfully",
   );
+
+  return attachAdminSessionCookie(response, token);
 });

@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 const CLUSTERS = [
   { icon: Code2, title: "Frontend", items: ["Next.js", "TypeScript", "Tailwind", "Framer Motion"] },
   { icon: Database, title: "Backend", items: ["Node APIs", "Edge routes", "MongoDB Atlas", "Mongoose"] },
-  { icon: Brain, title: "AI", items: ["LongCat AI", "Aiva assistants", "Content tools", "Workflow bots"] },
+  { icon: Brain, title: "AI", items: ["Groq AI", "Aiva assistants", "Content tools", "Workflow bots"] },
   { icon: Cloud, title: "Cloud & Media", items: ["ImageKit CDN", "Cloud deploy", "Uploads", "Pipelines"] },
   { icon: LineChart, title: "SEO & Analytics", items: ["Metadata", "Schema.org", "Web Vitals", "Search IA"] },
 ];

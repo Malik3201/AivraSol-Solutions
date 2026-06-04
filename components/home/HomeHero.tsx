@@ -19,7 +19,7 @@ export function HomeHero() {
   return (
     <section
       id="home-hero"
-      className="relative isolate min-h-[calc(100vh-72px)] overflow-hidden border-t-0 border-b border-white/[0.06] bg-[#060a08]"
+      className="relative isolate min-h-[calc(100dvh-4rem)] overflow-hidden border-t-0 border-b border-white/[0.06] bg-[#060a08] sm:min-h-[calc(100dvh-72px)]"
     >
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
         <AmbientScene variant="hero" />
@@ -28,14 +28,14 @@ export function HomeHero() {
       <HomeContainer
         className={cn(
           HOME_GRID,
-          "relative z-10 min-h-[calc(100vh-72px)] items-center gap-10 py-16 lg:gap-8 lg:py-20",
+          "relative z-10 min-h-[calc(100dvh-4rem)] items-center gap-8 py-12 sm:min-h-[calc(100dvh-72px)] sm:gap-10 sm:py-16 lg:gap-8 lg:py-20",
         )}
       >
         <FadeIn className="col-span-12 flex flex-col justify-center lg:col-span-7">
           <p className="mb-5 text-[11px] font-medium uppercase tracking-[0.38em] text-primary">
             AIVRASOL AI STUDIO
           </p>
-          <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight text-white md:text-6xl lg:text-7xl">
+          <h1 className="text-[1.75rem] font-semibold leading-[1.08] tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
             Intelligent Digital Systems for Brands{" "}
             <span className="text-gradient-aivra">Ready to Scale</span>
           </h1>

@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import type { NextResponse } from "next/server";
 import { ApiError } from "@/lib/api-error";
 import { connectDB } from "@/lib/db";
 import { getServerEnv, isAdminAuthConfigured } from "@/lib/env";
@@ -147,15 +148,28 @@ export async function requireRole(
   return admin;
 }
 
-export async function setAdminSessionCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(ADMIN_TOKEN_COOKIE, token, {
+export function getAdminSessionCookieOptions() {
+  return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     maxAge: cookieMaxAgeSeconds(),
-  });
+  };
+}
+
+/** Prefer on Route Handler responses so Set-Cookie reaches browser fetch clients. */
+export function attachAdminSessionCookie(
+  response: NextResponse,
+  token: string,
+): NextResponse {
+  response.cookies.set(ADMIN_TOKEN_COOKIE, token, getAdminSessionCookieOptions());
+  return response;
+}
+
+export async function setAdminSessionCookie(token: string): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(ADMIN_TOKEN_COOKIE, token, getAdminSessionCookieOptions());
 }
 
 export async function clearAdminSessionCookie(): Promise<void> {

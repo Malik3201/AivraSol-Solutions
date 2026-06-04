@@ -34,7 +34,7 @@ export function AIWorkflowSection() {
       >
         <AivaGuide message={AIVA_WAYPOINT_MESSAGES["ai-workflow"]} className="mb-8" />
 
-        <div className="relative mx-auto min-h-[560px] w-full max-w-[980px] overflow-hidden rounded-3xl border border-white/[0.06] bg-[rgba(8,12,10,0.5)]">
+        <div className="relative mx-auto min-h-[420px] w-full max-w-[980px] overflow-hidden rounded-2xl border border-white/[0.06] bg-[rgba(8,12,10,0.5)] sm:min-h-[500px] sm:rounded-3xl md:min-h-[560px]">
           <svg
             className="pointer-events-none absolute inset-0 size-full text-primary/20"
             viewBox="0 0 100 100"

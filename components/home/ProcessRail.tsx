@@ -16,12 +16,12 @@ export function ProcessRail() {
         className="absolute left-[8%] right-[8%] top-8 hidden h-px bg-gradient-to-r from-transparent via-primary/35 to-transparent md:block"
         aria-hidden
       />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3 xl:grid-cols-6">
         {STEPS.map((step, i) => (
           <div
             key={step.title}
             className={cn(
-              "relative rounded-2xl border border-white/[0.08] bg-[rgba(10,16,14,0.55)] p-4 backdrop-blur-sm transition-colors hover:border-primary/25",
+              "relative w-[min(78vw,280px)] shrink-0 snap-center rounded-2xl border border-white/[0.08] bg-[rgba(10,16,14,0.55)] p-4 backdrop-blur-sm transition-colors hover:border-primary/25 md:w-auto",
             )}
           >
             <span className="mb-3 inline-flex size-8 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-xs font-semibold text-primary">

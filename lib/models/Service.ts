@@ -11,6 +11,8 @@ const ProcessStepSchema = new Schema(
 const ServiceSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
+    /** Legacy DB field — kept in sync with `title` for old unique indexes on `name`. */
+    name: { type: String, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, index: true },
     shortDescription: { type: String, default: "" },
     description: { type: String, default: "" },

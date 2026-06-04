@@ -106,8 +106,24 @@ export async function createDocument(
   data: Record<string, unknown>,
 ) {
   await connectDB();
-  const doc = await model.create(data);
-  return doc.toObject() as Record<string, unknown> & { _id: unknown };
+  try {
+    const doc = await model.create(data);
+    return doc.toObject() as Record<string, unknown> & { _id: unknown };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (message.includes("E11000")) {
+      if (message.includes("slug")) {
+        throw new ApiError("A service with this slug already exists.", 409);
+      }
+      if (message.includes("name")) {
+        throw new ApiError(
+          "Service name conflict in database. Retry save — if it persists, run db.services.dropIndex(\"name_1\") in MongoDB.",
+          409,
+        );
+      }
+    }
+    throw error;
+  }
 }
 
 export async function updateDocument(

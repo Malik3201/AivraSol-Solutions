@@ -12,6 +12,10 @@ import {
   resolveSlug,
   withId,
 } from "@/lib/services/admin-crud";
+import {
+  dropStaleCollectionIndexes,
+  withServiceLegacyName,
+} from "@/lib/db/legacy-indexes";
 import { Service } from "@/lib/models/Service";
 import { serviceCreateSchema } from "@/lib/validators/content.validator";
 import { getQueryParams } from "@/lib/utils/parse-query";
@@ -49,7 +53,12 @@ export const POST = asyncHandler(async (request: NextRequest) => {
     throw new ApiError("Invalid service data", 400, parsed.error.flatten());
   }
 
+  await dropStaleCollectionIndexes();
+
   const slug = await resolveSlug(Service, parsed.data);
-  const doc = await createDocument(Service, { ...parsed.data, slug });
+  const doc = await createDocument(
+    Service,
+    withServiceLegacyName({ ...parsed.data, slug }),
+  );
   return successResponse(withId(doc), "Service created", undefined, 201);
 });

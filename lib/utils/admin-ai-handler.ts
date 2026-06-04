@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { assertCanManageContent } from "@/lib/utils/admin-access";
 import { assertRateLimit, getRateLimitKey } from "@/lib/utils/rate-limit";
 import { getAiUnavailableMessage, LongCatUnavailableError } from "@/lib/services/longcat";
-import { isLongCatConfigured } from "@/lib/env";
+import { isGroqConfigured } from "@/lib/env";
 
 export async function handleAdminAiRoute<T extends z.ZodType>(
   request: NextRequest,
@@ -29,7 +29,7 @@ export async function handleAdminAiRoute<T extends z.ZodType>(
     throw new ApiError("Invalid AI request", 400, parsed.error.flatten());
   }
 
-  if (!isLongCatConfigured()) {
+  if (!isGroqConfigured()) {
     const draft = await generate(parsed.data, admin.id);
     return successResponse(
       { ...draft, aiNotice: getAiUnavailableMessage() },

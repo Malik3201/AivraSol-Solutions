@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/db";
-import { isLongCatConfigured } from "@/lib/env";
+import { isGroqConfigured } from "@/lib/env";
 import { AiLog, type AiFeature } from "@/lib/models/AiLog";
 import { ApiError } from "@/lib/api-error";
 import { Service, Project, FAQ } from "@/lib/models";
@@ -10,6 +10,36 @@ Voice: confident, modern, strategic, human. Avoid generic AI buzzwords, hype, an
 Do not invent client results, metrics, or case studies unless the user explicitly provided them.`;
 
 const REQUEST_TIMEOUT_MS = 45_000;
+
+const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_DEFAULT_MODEL = "llama-3.3-70b-versatile";
+
+/** Groq-supported chat models (see https://console.groq.com/docs/models). */
+const GROQ_MODEL_ALIASES: Record<string, string> = {
+  default: GROQ_DEFAULT_MODEL,
+  "longcat-2.0-preview": GROQ_DEFAULT_MODEL,
+  "longcat-flash-chat": "llama-3.1-8b-instant",
+  fast: "llama-3.1-8b-instant",
+};
+
+export function resolveGroqModel(): string {
+  const configured =
+    process.env.GROQ_MODEL?.trim() || process.env.LONGCAT_MODEL?.trim();
+  if (!configured) return GROQ_DEFAULT_MODEL;
+  const alias = GROQ_MODEL_ALIASES[configured.toLowerCase()];
+  if (alias) return alias;
+  return configured;
+}
+
+/** @deprecated Use GROQ chat URL constant */
+export function resolveLongCatChatCompletionsUrl(): string {
+  return GROQ_CHAT_URL;
+}
+
+/** @deprecated Use resolveGroqModel */
+export function resolveLongCatModel(): string {
+  return resolveGroqModel();
+}
 
 export interface LongCatMessage {
   role: "system" | "user" | "assistant";
@@ -31,28 +61,47 @@ export interface ChatCompletionResult {
 }
 
 export class LongCatUnavailableError extends Error {
-  constructor(message = "AI service is temporarily unavailable") {
+  status?: number;
+
+  constructor(message = "AI service is temporarily unavailable", status?: number) {
     super(message);
     this.name = "LongCatUnavailableError";
+    this.status = status;
   }
+}
+
+function ensureJsonHintForGroq(
+  messages: LongCatMessage[],
+  responseFormat?: ChatCompletionInput["responseFormat"],
+): LongCatMessage[] {
+  if (responseFormat !== "json_object") return messages;
+  const hasJsonHint = messages.some((m) => /json/i.test(m.content));
+  if (hasJsonHint) return messages;
+  return [
+    {
+      role: "system",
+      content: "You must respond with valid JSON only.",
+    },
+    ...messages,
+  ];
 }
 
 export async function chatCompletion(
   input: ChatCompletionInput,
 ): Promise<ChatCompletionResult> {
-  if (!isLongCatConfigured()) {
+  if (!isGroqConfigured()) {
     throw new LongCatUnavailableError();
   }
 
-  const baseUrl = process.env.LONGCAT_BASE_URL!.replace(/\/$/, "");
-  const model = process.env.LONGCAT_MODEL ?? "default";
+  const model = resolveGroqModel();
+  const messages = ensureJsonHintForGroq(input.messages, input.responseFormat);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
     const body: Record<string, unknown> = {
       model,
-      messages: input.messages,
+      messages,
       temperature: input.temperature ?? 0.7,
       max_tokens: input.maxTokens ?? 2048,
     };
@@ -61,18 +110,31 @@ export async function chatCompletion(
       body.response_format = { type: "json_object" };
     }
 
-    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
+    const response = await fetch(GROQ_CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.LONGCAT_API_KEY}`,
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
 
     if (!response.ok) {
-      throw new LongCatUnavailableError("AI provider returned an error");
+      const detail =
+        process.env.NODE_ENV === "development"
+          ? (await response.text()).slice(0, 300)
+          : "";
+      if (detail) {
+        console.error(
+          `[groq] ${response.status} ${response.statusText}:`,
+          detail,
+        );
+      }
+      throw new LongCatUnavailableError(
+        `AI provider returned ${response.status}`,
+        response.status,
+      );
     }
 
     const data = (await response.json()) as {
@@ -437,31 +499,59 @@ Name: ${input.name ?? "not provided"}`;
 }
 
 export async function buildAivaPublicContext() {
-  await connectDB();
-  const [services, projects, faqs, settings] = await Promise.all([
-    Service.find({ isActive: true })
-      .select("title slug shortDescription")
-      .limit(12)
-      .lean(),
-    Project.find({ isActive: true })
-      .select("title slug shortDescription industry")
-      .limit(8)
-      .lean(),
-    FAQ.find({ isActive: true })
-      .select("question answer category")
-      .limit(15)
-      .lean(),
-    getPublicSettingsMap(),
-  ]);
+  try {
+    await connectDB();
+    const [services, projects, faqs, settings] = await Promise.all([
+      Service.find({ isActive: true })
+        .select("title slug shortDescription")
+        .limit(12)
+        .lean(),
+      Project.find({ isActive: true })
+        .select("title slug shortDescription industry")
+        .limit(8)
+        .lean(),
+      FAQ.find({ isActive: true })
+        .select("question answer category")
+        .limit(15)
+        .lean(),
+      getPublicSettingsMap(),
+    ]);
 
-  return {
-    companyName: settings.companyName ?? "AIVRASOL",
-    tagline: settings.tagline ?? "Premium AI & digital services",
-    services,
-    projects,
-    faqs,
-    contactEmail: settings.contactEmail,
-  };
+    return {
+      companyName: (settings.companyName as string) ?? "AIVRASOL",
+      tagline:
+        (settings.tagline as string) ?? "Premium AI & digital services",
+      services,
+      projects,
+      faqs,
+      contactEmail: settings.contactEmail as string | undefined,
+    };
+  } catch (error) {
+    const { FALLBACK_SERVICES, FALLBACK_PROJECTS } = await import(
+      "@/lib/home-fallback"
+    );
+    console.error(
+      "[aiva] Using static context fallback:",
+      error instanceof Error ? error.message : error,
+    );
+    return {
+      companyName: "AIVRASOL",
+      tagline: "Premium AI and digital services for ambitious brands.",
+      services: FALLBACK_SERVICES.map((s) => ({
+        title: s.title,
+        slug: s.slug,
+        shortDescription: s.shortDescription ?? "",
+      })),
+      projects: FALLBACK_PROJECTS.map((p) => ({
+        title: p.title,
+        slug: p.slug,
+        shortDescription: p.shortDescription ?? "",
+        industry: p.industry,
+      })),
+      faqs: [] as Array<{ question: string; answer: string; category?: string }>,
+      contactEmail: undefined,
+    };
+  }
 }
 
 export async function aivaChat(input: {
@@ -540,7 +630,11 @@ Rules:
       metadata: { sessionId: input.sessionId },
     });
 
-    return parsed;
+    const { _aiFallback: _omit, ...payload } = parsed as typeof fallback & {
+      _aiFallback?: boolean;
+    };
+    void _omit;
+    return payload;
   } catch (error) {
     await logAiCall({
       feature: "chatbot",
@@ -549,7 +643,20 @@ Rules:
       errorMessage: error instanceof Error ? error.message : "failed",
       metadata: { sessionId: input.sessionId },
     });
-    return fallback;
+
+    const quotaLimited =
+      error instanceof LongCatUnavailableError && error.status === 429;
+
+    const { _aiFallback: _omit, ...payload } = quotaLimited
+      ? {
+          ...fallback,
+          reply:
+            "Our AI assistant is temporarily unavailable due to API usage limits. You can still explore services below or reach the team on the contact page.",
+          suggestedActions: ["View services", "Contact us"],
+        }
+      : fallback;
+    void _omit;
+    return payload;
   }
 }
 

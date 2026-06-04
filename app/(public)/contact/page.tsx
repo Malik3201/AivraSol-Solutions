@@ -1,12 +1,14 @@
+import { ContactIntakeConsole } from "@/components/contact/ContactIntakeConsole";
+import { ContactProcess } from "@/components/contact/ContactProcess";
+import { ContactWorkspace } from "@/components/contact/ContactWorkspace";
 import { PageHero } from "@/components/site/PageHero";
-import { SectionShell } from "@/components/site/SectionShell";
-import { PremiumCard } from "@/components/site/PremiumCard";
+import { PageSection } from "@/components/site/PageSection";
 import { createPageMetadata } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
   title: "Contact",
   description:
-    "Contact AIVRASOL to discuss AI products, automation, and premium digital initiatives.",
+    "Contact AIVRASOL to discuss websites, automation, AI products, and intelligent digital systems for your business.",
   path: "/contact",
 });
 
@@ -14,21 +16,33 @@ export default function ContactPage() {
   return (
     <>
       <PageHero
-        eyebrow="Contact"
-        title="Let's build what's next."
-        description="Share your goals and constraints. We'll respond with a clear path forward — no generic pitch decks."
+        eyebrow="Contact AIVRASOL"
+        title="Let's build your next intelligent digital system."
+        description="Tell us what you want to build. We'll help turn the idea into a clear strategy, premium experience, and scalable technical direction."
+        visual={<ContactIntakeConsole />}
       />
-      <SectionShell size="narrow">
-        <PremiumCard>
-          <p className="text-xs uppercase tracking-[0.3em] text-primary">Contact form</p>
-          <h2 className="mt-3 text-2xl font-semibold">Start the conversation</h2>
-          <p className="mt-3 text-sm text-muted-foreground">
-            The interactive contact form with AI message assist will connect to{" "}
-            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">/api/contact</code> in
-            the next phase. Fields: name, email, service interest, budget, and message.
+
+      <PageSection background="editorial">
+        <ContactWorkspace />
+      </PageSection>
+
+      <PageSection background="minimal" title="What happens next">
+        <ContactProcess />
+      </PageSection>
+
+      <PageSection background="cta" className="border-b-0">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-[11px] uppercase tracking-[0.34em] text-primary">Trust</p>
+          <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white md:text-3xl">
+            Clear process. No vague promises.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
+            Every inquiry is reviewed by the AIVRASOL team. You receive honest scope guidance,
+            realistic timelines, and a practical path — whether you need a website, automation
+            layer, or full AI-enabled platform.
           </p>
-        </PremiumCard>
-      </SectionShell>
+        </div>
+      </PageSection>
     </>
   );
 }
