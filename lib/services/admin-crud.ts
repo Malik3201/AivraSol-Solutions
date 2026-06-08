@@ -3,6 +3,7 @@ import { ApiError } from "@/lib/api-error";
 import { connectDB } from "@/lib/db";
 import { slugify } from "@/lib/utils/slugify";
 import { isValidObjectId } from "@/lib/utils/object-id";
+import { invalidateAivaContextCache } from "@/lib/services/aiva-context";
 import { buildPaginationMeta } from "@/lib/utils/pagination";
 
 export interface ListOptions {
@@ -108,6 +109,7 @@ export async function createDocument(
   await connectDB();
   try {
     const doc = await model.create(data);
+    invalidateAivaContextCache();
     return doc.toObject() as Record<string, unknown> & { _id: unknown };
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -140,6 +142,7 @@ export async function updateDocument(
   if (!doc) {
     throw new ApiError(notFoundMessage, 404);
   }
+  invalidateAivaContextCache();
   return doc;
 }
 
@@ -154,6 +157,7 @@ export async function deleteDocument(
   if (!doc) {
     throw new ApiError(notFoundMessage, 404);
   }
+  invalidateAivaContextCache();
   return doc;
 }
 

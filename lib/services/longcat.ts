@@ -2,8 +2,10 @@ import { connectDB } from "@/lib/db";
 import { isGroqConfigured } from "@/lib/env";
 import { AiLog, type AiFeature } from "@/lib/models/AiLog";
 import { ApiError } from "@/lib/api-error";
-import { Service, Project, FAQ } from "@/lib/models";
-import { getPublicSettingsMap } from "@/lib/services/public-content";
+import {
+  buildAivaPublicContext,
+  serializeAivaContextForPrompt,
+} from "@/lib/services/aiva-context";
 
 const BRAND_VOICE = `You are writing for AIVRASOL, a premium AI and digital services studio.
 Voice: confident, modern, strategic, human. Avoid generic AI buzzwords, hype, and fake claims.
@@ -498,61 +500,7 @@ Name: ${input.name ?? "not provided"}`;
   }
 }
 
-export async function buildAivaPublicContext() {
-  try {
-    await connectDB();
-    const [services, projects, faqs, settings] = await Promise.all([
-      Service.find({ isActive: true })
-        .select("title slug shortDescription")
-        .limit(12)
-        .lean(),
-      Project.find({ isActive: true })
-        .select("title slug shortDescription industry")
-        .limit(8)
-        .lean(),
-      FAQ.find({ isActive: true })
-        .select("question answer category")
-        .limit(15)
-        .lean(),
-      getPublicSettingsMap(),
-    ]);
-
-    return {
-      companyName: (settings.companyName as string) ?? "AIVRASOL",
-      tagline:
-        (settings.tagline as string) ?? "Premium AI & digital services",
-      services,
-      projects,
-      faqs,
-      contactEmail: settings.contactEmail as string | undefined,
-    };
-  } catch (error) {
-    const { FALLBACK_SERVICES, FALLBACK_PROJECTS } = await import(
-      "@/lib/home-fallback"
-    );
-    console.error(
-      "[aiva] Using static context fallback:",
-      error instanceof Error ? error.message : error,
-    );
-    return {
-      companyName: "AIVRASOL",
-      tagline: "Premium AI and digital services for ambitious brands.",
-      services: FALLBACK_SERVICES.map((s) => ({
-        title: s.title,
-        slug: s.slug,
-        shortDescription: s.shortDescription ?? "",
-      })),
-      projects: FALLBACK_PROJECTS.map((p) => ({
-        title: p.title,
-        slug: p.slug,
-        shortDescription: p.shortDescription ?? "",
-        industry: p.industry,
-      })),
-      faqs: [] as Array<{ question: string; answer: string; category?: string }>,
-      contactEmail: undefined,
-    };
-  }
-}
+export { buildAivaPublicContext, invalidateAivaContextCache } from "@/lib/services/aiva-context";
 
 export async function aivaChat(input: {
   message: string;
@@ -561,33 +509,17 @@ export async function aivaChat(input: {
   currentPage?: string;
 }) {
   const context = await buildAivaPublicContext();
-
-  const contextBlock = JSON.stringify(
-    {
-      company: context.companyName,
-      tagline: context.tagline,
-      services: context.services.map((s) => ({
-        title: s.title,
-        slug: s.slug,
-        summary: s.shortDescription,
-      })),
-      projects: context.projects.map((p) => ({
-        title: p.title,
-        slug: p.slug,
-        industry: p.industry,
-      })),
-      faqs: context.faqs.slice(0, 8),
-    },
-    null,
-    0,
-  );
+  const contextBlock = serializeAivaContextForPrompt(context);
 
   const system = `You are AIVA, the public guide for AIVRASOL.
 ${BRAND_VOICE}
 Rules:
-- Only use information from the PUBLIC_CONTEXT JSON below.
-- If unsure, say you don't have that detail and suggest contacting the team.
-- For pricing, explain scope varies and recommend contact.
+- PUBLIC_CONTEXT contains the full live website knowledge base: every active service, project, team member, FAQ, testimonial, and published blog post, plus site pages and contact details.
+- Answer using only facts from PUBLIC_CONTEXT. Do not invent offerings, people, clients, or metrics.
+- When relevant, name specific services/projects/team members and include their path (e.g. /services/slug, /team/slug).
+- For team questions, use names, roles, bios, and skills from context.
+- For pricing, explain scope varies and recommend /contact.
+- If a detail is missing from context, say so and suggest contacting the team.
 - Redirect off-topic questions politely to AIVRASOL services.
 - Return JSON only: {
   "reply": string,
@@ -614,7 +546,7 @@ Rules:
         { role: "user", content: user },
       ],
       temperature: 0.5,
-      maxTokens: 900,
+      maxTokens: 1400,
       responseFormat: "json_object",
     });
 
