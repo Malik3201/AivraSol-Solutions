@@ -13,7 +13,7 @@ export function AivaDock({
     <div
       data-aiva-dock={id}
       className={cn(
-        "pointer-events-none absolute z-[3] hidden size-3 lg:block",
+        "pointer-events-none absolute z-[3] size-3 opacity-0",
         className,
       )}
       aria-hidden
