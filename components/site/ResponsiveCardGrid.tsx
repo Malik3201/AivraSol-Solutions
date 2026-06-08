@@ -40,6 +40,7 @@ export function ResponsiveCardGrid<T>({
   ariaLabel = "Cards",
   slideClassName,
   className,
+  carouselOnly = false,
 }: {
   items: T[];
   keyExtractor: (item: T) => string;
@@ -52,6 +53,8 @@ export function ResponsiveCardGrid<T>({
   ariaLabel?: string;
   slideClassName?: string;
   className?: string;
+  /** Carousel on all breakpoints — no companion grid */
+  carouselOnly?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -117,7 +120,8 @@ export function ResponsiveCardGrid<T>({
   if (!items.length) return null;
 
   const isSingleRow = layout === "single-row";
-  const carouselHidden = isSingleRow ? "" : CAROUSEL_VISIBLE[carouselFrom];
+  const carouselHidden =
+    carouselOnly || isSingleRow ? "" : CAROUSEL_VISIBLE[carouselFrom];
   const gridMin = GRID_MIN[carouselFrom];
   const resolvedSlideClass = cn(
     isSingleRow
@@ -136,6 +140,14 @@ export function ResponsiveCardGrid<T>({
       }}
       onMouseLeave={() => {
         pausedRef.current = false;
+      }}
+      onTouchStart={() => {
+        pausedRef.current = true;
+      }}
+      onTouchEnd={() => {
+        window.setTimeout(() => {
+          pausedRef.current = false;
+        }, 4000);
       }}
       onFocusCapture={() => {
         pausedRef.current = true;
@@ -222,8 +234,8 @@ export function ResponsiveCardGrid<T>({
   return (
     <div className={className}>
       {carousel}
-      {gridClassName ? (
-        <div className={cn("hidden gap-6", gridMin, gridClassName)}>
+      {gridClassName && !carouselOnly ? (
+        <div className={cn("hidden", gridMin, "gap-6", gridClassName)}>
           {items.map((item, index) => (
             <div key={keyExtractor(item)}>{renderItem(item, index)}</div>
           ))}

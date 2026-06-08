@@ -23,7 +23,7 @@ export function TeamPreview({ members }: { members: PublicTeamMember[] }) {
         <AivaGuide message={AIVA_WAYPOINT_MESSAGES.team} className="mb-6 md:mb-8" />
         <div className="relative">
           <AivaDock id="team" className="right-6 top-24 md:right-10" />
-          <TeamMembersSection members={list} columns="responsive" />
+          <TeamMembersSection members={list} columns="responsive" carouselOnly />
         </div>
         <div className="mt-8 text-center sm:mt-10">
           <Link
